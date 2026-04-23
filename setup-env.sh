@@ -27,6 +27,8 @@ done
 
 if [ ! -d "$CARGO_HOME" ]; then
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --no-modify-path
+    # Exécution explicite du binaire cargo localisé dans le goinfre
+    "$GOINFRE_DIR/.cargo/bin/rustup" component add rust-src
 fi
 EOF
     chmod +x "$HOME/.setup_rust_goinfre.sh"
