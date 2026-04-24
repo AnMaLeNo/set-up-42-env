@@ -101,8 +101,8 @@ setup_vscode_extensions() {
     fi
 
     # 3. Génération du Daemon d'Installation (Exécution au Login)
-    if [ ! -f "$AUTOSTART_SCRIPT" ]; then
-        cat << 'EOF' > "$AUTOSTART_SCRIPT"
+	rm -f "$AUTOSTART_SCRIPT"
+	cat << 'EOF' > "$AUTOSTART_SCRIPT"
 #!/bin/bash
 MANIFEST="$HOME/.vscode_extensions_manifest"
 LOG_FILE="$HOME/goinfre/vscode_setup.log"
@@ -115,6 +115,23 @@ while [ ! -d "$HOME/goinfre" ]; do
     WAIT_TIME=$((WAIT_TIME + 2))
     [ $WAIT_TIME -ge $MAX_WAIT ] && exit 1
 done
+
+TARGET="$HOME/goinfre/.vscode-extensions"
+LINK="$HOME/.vscode/extensions"
+
+# 1. Fix critique (ENOENT)
+mkdir -p "$TARGET"
+mkdir -p "$HOME/.vscode"
+
+# 2. Si c'est un dossier → backup
+if [ -d "$LINK" ] && [ ! -L "$LINK" ]; then
+    mv "$LINK" "${LINK}_backup_$(date +%s)"
+fi
+
+# 3. Si mauvais lien ou absent → corriger
+if [ ! -L "$LINK" ] || [ "$(readlink "$LINK")" != "$TARGET" ]; then
+    ln -sf "$TARGET" "$LINK"
+fi
 
 # Vérification de la disponibilité de l'exécutable dans le tableau d'environnement $PATH
 if ! command -v code &> /dev/null; then
@@ -139,7 +156,7 @@ if [ -f "$MANIFEST" ]; then
 fi
 EOF
         chmod +x "$AUTOSTART_SCRIPT"
-    fi
+    
 
     # 4. Enregistrement du Daemon auprès du gestionnaire de session (X11/Wayland)
     if [ ! -f "$DESKTOP_FILE" ]; then
